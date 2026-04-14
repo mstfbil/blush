@@ -49,6 +49,34 @@ function blush.render(richtext, x, y, wrap)
     end
 end
 
+function blush.sub(richtext, i, j)
+    local n = {}
+    local pos = 1
+
+    for _, segment in ipairs(richtext) do
+        local text = segment[1] or segment.text
+        local segment_end = pos + #text - 1
+
+        if segment_end >= i and pos <= j then
+            local rel_i = math.max(1, i - pos + 1)
+            local rel_j = math.min(#text, j - pos + 1)
+
+            local slice = {}
+            for k, v in pairs(segment) do
+                slice[k] = v
+            end
+            slice[1] = string.sub(text, rel_i, rel_j)
+
+            table.insert(n, slice)
+        end
+
+        pos = pos + #text
+        if pos > j then break end
+    end
+
+    return n
+end
+
 function blush.updateDefaults(t)
     for k, v in pairs(t) do
         DEFAULTS[k] = v
