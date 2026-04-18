@@ -100,44 +100,6 @@ function blush.render(richtext, x, y, wrap, align)
     end
 end
 
-function blush.renderold(richtext, x, y, wrap)
-    local cur_x, cur_y = x, y
-    local max_line_height = 0
-    for _, segment in ipairs(richtext) do
-        local text = segment[1] or segment.text
-        local color = segment.color or DEFAULTS.color
-        local font = segment.font or DEFAULTS.font
-        local r = segment.r or DEFAULTS.r
-        local sx = segment.sx or DEFAULTS.sx
-        local sy = segment.sy or sx
-        local ox = segment.ox or DEFAULTS.ox
-        local oy = segment.oy or DEFAULTS.oy
-        local kx = segment.kx or DEFAULTS.kx
-        local ky = segment.ky or DEFAULTS.ky
-
-        love.graphics.setColor(color)
-        love.graphics.setFont(font)
-
-        local height = font:getHeight()
-        if height > max_line_height then
-            max_line_height = height
-        end
-
-        for word in string.gmatch(text, "%S+%s*") do
-            local width = font:getWidth(word)
-
-            if wrap and (cur_x + width > x + wrap) and (cur_x > x) then
-                cur_x = x
-                cur_y = cur_y + max_line_height
-                max_line_height = height
-            end
-
-            love.graphics.print(word, cur_x, cur_y, r, sx, sy, ox, oy, kx, ky)
-            cur_x = cur_x + width
-        end
-    end
-end
-
 function blush.sub(richtext, i, j)
     local n = {}
     local pos = 1
@@ -163,7 +125,7 @@ function blush.sub(richtext, i, j)
         if pos > j then break end
     end
 
-    return n
+    return blush.new(n)
 end
 
 function blush.length(richtext)
@@ -179,6 +141,28 @@ function blush.updateDefaults(t)
     for k, v in pairs(t) do
         DEFAULTS[k] = v
     end
+end
+
+function blush.new(richtext)
+    function richtext:render(x, y, wrap, align)
+        blush.render(self, x, y, wrap, align)
+    end
+
+    function richtext:draw(...)
+        richtext:render(...)
+    end
+
+    function richtext:sub(i, j)
+        return blush.sub(self, i, j)
+    end
+
+    setmetatable(richtext, {
+        __len = function(t)
+            return blush.length(t)
+        end
+    })
+
+    return richtext
 end
 
 setmetatable(blush, {
